@@ -1,0 +1,82 @@
+.tool-bar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.55rem 0.75rem;
+  padding: 0.55rem 0.75rem;
+  background: rgba(255, 250, 244, 0.92);
+  border-bottom: 1px solid rgba(74, 52, 40, 0.14);
+  backdrop-filter: blur(10px);
+  color: #4a3428;
+}
+
+.tool-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.tool-bar button {
+  appearance: none;
+  border: 1px solid rgba(74, 52, 40, 0.18);
+  background: rgba(255, 250, 244, 0.9);
+  color: inherit;
+  border-radius: 999px;
+  padding: 0.4rem 0.75rem;
+  font: inherit;
+  font-size: 0.78rem;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+}
+
+.tool-bar button.active {
+  background: #4a3428;
+  color: #f6efe6;
+  border-color: #4a3428;
+}
+
+.tool-bar button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.tool-group.colors {
+  gap: 0.3rem;
+}
+
+.swatch {
+  width: 1.35rem;
+  height: 1.35rem;
+  padding: 0 !important;
+  border-radius: 999px !important;
+}
+
+.swatch.active {
+  outline: 2px solid #4a3428;
+  outline-offset: 2px;
+}
+
+.width-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  letter-spacing: 0.03em;
+}
+
+.width-control input {
+  width: 7rem;
+}
+
+.clear-btn {
+  margin-left: auto;
+}
+
+@media (max-width: 720px) {
+  .clear-btn {
+    margin-left: 0;
+  }
+}

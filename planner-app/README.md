@@ -1,6 +1,6 @@
 # Honey & Silk Planner (React)
 
-Identical visual replica of the Canva planner: page images + clickable link hotspots.
+Identical visual replica of the Canva planner: page images + clickable link hotspots, PWA install, and tablet pen tools.
 
 ## Run
 
@@ -9,7 +9,22 @@ npm install
 npm run dev
 ```
 
-Open the local URL Vite prints. Use the month tabs / nav areas on the page, toolbar buttons, or arrow keys.
+## Features
+
+- Month-tab hotspots + swipe navigation
+- **PWA**: install to iPhone Home Screen / Chrome
+- **Top tools**: Navigate, Pen, Highlighter, Eraser (strokes saved per page in IndexedDB)
+
+### Install on iPhone (Safari)
+
+1. Open the site in Safari  
+2. Share → **Add to Home Screen**
+
+### Writing on iPad
+
+1. Tap **Pen** or **Highlighter** in the top bar  
+2. Write with Apple Pencil or finger  
+3. Tap **Navigate** to swipe / use month tabs again  
 
 ## Rebuild assets from PDF
 

@@ -2,10 +2,20 @@
   position: relative;
   min-height: 100svh;
   display: grid;
-  place-items: center;
+  grid-template-rows: auto 1fr;
+  place-items: stretch;
   background: transparent;
   color: #4a3428;
   overflow: hidden;
+}
+
+.shell > .tool-bar {
+  grid-column: 1 / -1;
+}
+
+.shell > .floral-layer,
+.shell > .stage {
+  grid-row: 2;
 }
 
 /* Only the outer floral margins of the page image — not the book */
@@ -57,13 +67,17 @@
 .stage {
   position: relative;
   z-index: 1;
-  width: 100vw;
-  height: 100svh;
+  width: 100%;
+  min-height: 0;
   display: grid;
   place-items: center;
   padding: 0;
   overflow: hidden;
   background: transparent;
+}
+
+.shell.drawing-mode .page-frame {
+  cursor: crosshair;
 }
 
 .page-frame {

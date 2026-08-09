@@ -1,4 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { DrawingCanvas } from './drawing/DrawingCanvas'
+import { ToolBar } from './drawing/ToolBar'
+import { savePageStrokes } from './drawing/store'
+import type { DrawTool } from './drawing/types'
 import type { PlannerManifest } from './types'
 import './App.css'
 
@@ -8,8 +12,6 @@ const SWIPE_THRESHOLD_PX = 72
 const SWIPE_LOCK_PX = 10
 const SLIDE_MS = 380
 const SNAP_MS = 180
-
-/** Outer page margins that are floral (not the book). */
 const FLORAL_EDGE = 0.055
 
 type SlideDir = 'left' | 'right'
@@ -22,6 +24,10 @@ function App() {
   const [isDragging, setIsDragging] = useState(false)
   const [motion, setMotion] = useState<'none' | 'slide' | 'snap'>('none')
   const [anim, setAnim] = useState<{ dir: SlideDir; to: number } | null>(null)
+  const [tool, setTool] = useState<DrawTool>('navigate')
+  const [inkColor, setInkColor] = useState('#3b2a22')
+  const [inkWidth, setInkWidth] = useState(4)
+  const [drawKey, setDrawKey] = useState(0)
 
   const pointerIdRef = useRef<number | null>(null)
   const startXRef = useRef(0)
@@ -32,6 +38,7 @@ function App() {
   const pageIndexRef = useRef(0)
   const animatingRef = useRef(false)
   const frameWidthRef = useRef(1)
+  const toolRef = useRef<DrawTool>('navigate')
 
   const clicksSuppressed = () =>
     animatingRef.current || Date.now() < suppressClicksUntilRef.current
@@ -39,6 +46,10 @@ function App() {
   useEffect(() => {
     pageIndexRef.current = pageIndex
   }, [pageIndex])
+
+  useEffect(() => {
+    toolRef.current = tool
+  }, [tool])
 
   useEffect(() => {
     let cancelled = false
@@ -83,7 +94,6 @@ function App() {
         setAnim(null)
         setMotion('none')
         animatingRef.current = false
-        // Allow hotspots again after the slide finishes (+ ghost-click window)
         suppressClicksUntilRef.current = Date.now() + 80
       }, SLIDE_MS)
     },
@@ -102,6 +112,7 @@ function App() {
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
+      if (toolRef.current !== 'navigate') return
       if (event.key === 'ArrowRight' || event.key === 'PageDown') {
         event.preventDefault()
         goTo(pageIndexRef.current + 1, 'left')
@@ -120,7 +131,6 @@ function App() {
     return () => window.removeEventListener('keydown', onKey)
   }, [goTo, manifest])
 
-  /** Hard stop at ends — no rubber-band / bounce. */
   const clampDrag = (dx: number) => {
     const atStart = pageIndexRef.current === 0
     const atEnd = !!manifest && pageIndexRef.current >= manifest.pageCount - 1
@@ -131,9 +141,12 @@ function App() {
   }
 
   const onPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (toolRef.current !== 'navigate') return
     if (event.button !== 0 || animatingRef.current) return
     const target = event.target as HTMLElement
-    if (target.closest('.book-nav') || target.closest('.hotspot')) return
+    if (target.closest('.book-nav') || target.closest('.hotspot') || target.closest('.tool-bar')) {
+      return
+    }
 
     frameWidthRef.current = event.currentTarget.clientWidth || 1
     pointerIdRef.current = event.pointerId
@@ -147,6 +160,7 @@ function App() {
   }
 
   const onPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (toolRef.current !== 'navigate') return
     if (pointerIdRef.current !== event.pointerId) return
 
     const dx = event.clientX - startXRef.current
@@ -169,6 +183,7 @@ function App() {
   }
 
   const endPointer = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (toolRef.current !== 'navigate') return
     if (pointerIdRef.current !== event.pointerId) return
     pointerIdRef.current = null
     setIsDragging(false)
@@ -184,7 +199,6 @@ function App() {
     dragXRef.current = 0
     swipingRef.current = false
 
-    // Swallow the click that browsers fire right after a drag/swipe
     if (didSwipe) {
       suppressClicksUntilRef.current = Date.now() + 350
     }
@@ -204,6 +218,11 @@ function App() {
     setDragX(0)
     if (dx < 0) goTo(pageIndexRef.current + 1, 'left')
     else goTo(pageIndexRef.current - 1, 'right')
+  }
+
+  const clearPage = async () => {
+    await savePageStrokes(pageIndex, [])
+    setDrawKey((k) => k + 1)
   }
 
   if (error) {
@@ -226,6 +245,7 @@ function App() {
   const aspect = manifest.pageWidth / manifest.pageHeight
   const atStart = pageIndex === 0
   const atEnd = pageIndex >= manifest.pageCount - 1
+  const drawing = tool !== 'navigate'
 
   const peekIndex =
     anim?.to ??
@@ -250,8 +270,19 @@ function App() {
   const edgeZoom = `${(100 / FLORAL_EDGE).toFixed(2)}%`
 
   return (
-    <div className="shell">
-      {/* Edge-only floral strips from the same page — never the book body */}
+    <div className={`shell${drawing ? ' drawing-mode' : ''}`}>
+      <ToolBar
+        tool={tool}
+        color={inkColor}
+        width={inkWidth}
+        onToolChange={setTool}
+        onColorChange={setInkColor}
+        onWidthChange={setInkWidth}
+        onClearPage={() => {
+          void clearPage()
+        }}
+      />
+
       <div className="floral-layer" aria-hidden>
         <div
           className="floral-strip floral-left"
@@ -287,8 +318,8 @@ function App() {
         <div
           className={`page-frame${isDragging ? ' dragging' : ''}`}
           style={{
-            width: `min(100vw, calc(100svh * ${aspect}))`,
-            height: `min(100svh, calc(100vw / ${aspect}))`,
+            width: `min(100vw, calc((100svh - 3.4rem) * ${aspect}))`,
+            height: `min(calc(100svh - 3.4rem), calc(100vw / ${aspect}))`,
           }}
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
@@ -315,32 +346,41 @@ function App() {
               draggable={false}
             />
 
-            {page.links.map((link, idx) => (
-              <button
-                key={`${pageIndex}-${idx}-${link.toPage}`}
-                type="button"
-                className="hotspot"
-                style={{
-                  left: `${(link.x - HIT_PAD) * 100}%`,
-                  top: `${(link.y - HIT_PAD * 0.5) * 100}%`,
-                  width: `${(link.w + HIT_PAD * 2) * 100}%`,
-                  height: `${(link.h + HIT_PAD) * 100}%`,
-                }}
-                aria-label={`Go to page ${link.toPage + 1}`}
-                onPointerDown={(event) => {
-                  // Keep page-frame from capturing this gesture as a swipe
-                  event.stopPropagation()
-                }}
-                onClick={(event) => {
-                  if (clicksSuppressed()) {
-                    event.preventDefault()
+            <DrawingCanvas
+              key={`${pageIndex}-${drawKey}`}
+              pageIndex={pageIndex}
+              tool={tool}
+              color={inkColor}
+              width={inkWidth}
+              enabled={drawing}
+            />
+
+            {!drawing &&
+              page.links.map((link, idx) => (
+                <button
+                  key={`${pageIndex}-${idx}-${link.toPage}`}
+                  type="button"
+                  className="hotspot"
+                  style={{
+                    left: `${(link.x - HIT_PAD) * 100}%`,
+                    top: `${(link.y - HIT_PAD * 0.5) * 100}%`,
+                    width: `${(link.w + HIT_PAD * 2) * 100}%`,
+                    height: `${(link.h + HIT_PAD) * 100}%`,
+                  }}
+                  aria-label={`Go to page ${link.toPage + 1}`}
+                  onPointerDown={(event) => {
                     event.stopPropagation()
-                    return
-                  }
-                  goTo(link.toPage)
-                }}
-              />
-            ))}
+                  }}
+                  onClick={(event) => {
+                    if (clicksSuppressed()) {
+                      event.preventDefault()
+                      event.stopPropagation()
+                      return
+                    }
+                    goTo(link.toPage)
+                  }}
+                />
+              ))}
           </div>
 
           <nav className="book-nav" aria-label="Page navigation">
