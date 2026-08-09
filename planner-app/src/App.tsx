@@ -28,10 +28,13 @@ function App() {
   const startYRef = useRef(0)
   const dragXRef = useRef(0)
   const swipingRef = useRef(false)
-  const ignoreClickRef = useRef(false)
+  const suppressClicksUntilRef = useRef(0)
   const pageIndexRef = useRef(0)
   const animatingRef = useRef(false)
   const frameWidthRef = useRef(1)
+
+  const clicksSuppressed = () =>
+    animatingRef.current || Date.now() < suppressClicksUntilRef.current
 
   useEffect(() => {
     pageIndexRef.current = pageIndex
@@ -80,6 +83,8 @@ function App() {
         setAnim(null)
         setMotion('none')
         animatingRef.current = false
+        // Allow hotspots again after the slide finishes (+ ghost-click window)
+        suppressClicksUntilRef.current = Date.now() + 80
       }, SLIDE_MS)
     },
     [manifest],
@@ -136,7 +141,6 @@ function App() {
     startYRef.current = event.clientY
     dragXRef.current = 0
     swipingRef.current = false
-    ignoreClickRef.current = false
     setMotion('none')
     setIsDragging(true)
     event.currentTarget.setPointerCapture(event.pointerId)
@@ -157,7 +161,6 @@ function App() {
         return
       }
       swipingRef.current = true
-      ignoreClickRef.current = true
     }
 
     const next = clampDrag(dx)
@@ -170,11 +173,23 @@ function App() {
     pointerIdRef.current = null
     setIsDragging(false)
 
-    const dx = dragXRef.current
-    dragXRef.current = 0
+    try {
+      event.currentTarget.releasePointerCapture(event.pointerId)
+    } catch {
+      /* already released */
+    }
 
-    if (!swipingRef.current || Math.abs(dx) < SWIPE_THRESHOLD_PX) {
-      swipingRef.current = false
+    const dx = dragXRef.current
+    const didSwipe = swipingRef.current
+    dragXRef.current = 0
+    swipingRef.current = false
+
+    // Swallow the click that browsers fire right after a drag/swipe
+    if (didSwipe) {
+      suppressClicksUntilRef.current = Date.now() + 350
+    }
+
+    if (!didSwipe || Math.abs(dx) < SWIPE_THRESHOLD_PX) {
       if (dx !== 0) {
         setMotion('snap')
         setDragX(0)
@@ -189,7 +204,6 @@ function App() {
     setDragX(0)
     if (dx < 0) goTo(pageIndexRef.current + 1, 'left')
     else goTo(pageIndexRef.current - 1, 'right')
-    swipingRef.current = false
   }
 
   if (error) {
@@ -313,9 +327,14 @@ function App() {
                   height: `${(link.h + HIT_PAD) * 100}%`,
                 }}
                 aria-label={`Go to page ${link.toPage + 1}`}
+                onPointerDown={(event) => {
+                  // Keep page-frame from capturing this gesture as a swipe
+                  event.stopPropagation()
+                }}
                 onClick={(event) => {
-                  if (ignoreClickRef.current || animatingRef.current) {
+                  if (clicksSuppressed()) {
                     event.preventDefault()
+                    event.stopPropagation()
                     return
                   }
                   goTo(link.toPage)
