@@ -1,0 +1,13 @@
+# Dependencies / tooling
+.pdf-tools-venv/
+planner-app/node_modules/
+planner-app/dist/
+
+# Large source exports (keep GoodNotes build / web assets if needed)
+THIS PLANNER BELONGS TO.pdf
+
+# OS / editor
+.DS_Store
+.cursor/
+*.log
+.vite/
