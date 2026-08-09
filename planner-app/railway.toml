@@ -1,6 +1,6 @@
 [build]
 builder = "RAILPACK"
-buildCommand = "npm ci && npm run build"
+buildCommand = "npm run build"
 
 [deploy]
 # Served via RAILPACK_SPA_OUTPUT_DIR=dist (Caddy). Fallback start if needed:
