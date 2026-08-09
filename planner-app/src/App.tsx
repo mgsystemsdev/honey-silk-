@@ -12,8 +12,6 @@ const SWIPE_THRESHOLD_PX = 72
 const SWIPE_LOCK_PX = 10
 const SLIDE_MS = 380
 const SNAP_MS = 180
-const FLORAL_EDGE = 0.055
-
 type SlideDir = 'left' | 'right'
 
 function App() {
@@ -266,9 +264,6 @@ function App() {
       : '100%'
     : `${dragX}px`
 
-  const floralUrl = `url(${page.image})`
-  const edgeZoom = `${(100 / FLORAL_EDGE).toFixed(2)}%`
-
   return (
     <div className={`shell${drawing ? ' drawing-mode' : ''}`}>
       <ToolBar
@@ -283,36 +278,12 @@ function App() {
         }}
       />
 
-      <div className="floral-layer" aria-hidden>
-        <div
-          className="floral-strip floral-left"
-          style={{
-            backgroundImage: floralUrl,
-            backgroundSize: `${edgeZoom} 100%`,
-          }}
-        />
-        <div
-          className="floral-strip floral-right"
-          style={{
-            backgroundImage: floralUrl,
-            backgroundSize: `${edgeZoom} 100%`,
-          }}
-        />
-        <div
-          className="floral-strip floral-top"
-          style={{
-            backgroundImage: floralUrl,
-            backgroundSize: `100% ${edgeZoom}`,
-          }}
-        />
-        <div
-          className="floral-strip floral-bottom"
-          style={{
-            backgroundImage: floralUrl,
-            backgroundSize: `100% ${edgeZoom}`,
-          }}
-        />
-      </div>
+      {/* Even floral fill: same page art, cover + soft blur (book stays sharp on top) */}
+      <div
+        className="floral-layer"
+        style={{ backgroundImage: `url(${page.image})` }}
+        aria-hidden
+      />
 
       <main className="stage">
         <div

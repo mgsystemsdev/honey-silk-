@@ -18,50 +18,19 @@
   grid-row: 2;
 }
 
-/* Only the outer floral margins of the page image — not the book */
+/* Even floral surround — full-bleed cover of the same page, softened */
 .floral-layer {
   position: absolute;
-  inset: 0;
+  inset: -6%;
   z-index: 0;
   pointer-events: none;
   overflow: hidden;
-}
-
-.floral-strip {
-  position: absolute;
   background-repeat: no-repeat;
-}
-
-.floral-left {
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 50vw;
-  background-position: left center;
-}
-
-.floral-right {
-  right: 0;
-  top: 0;
-  bottom: 0;
-  width: 50vw;
-  background-position: right center;
-}
-
-.floral-top {
-  left: 0;
-  right: 0;
-  top: 0;
-  height: 50vh;
-  background-position: center top;
-}
-
-.floral-bottom {
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 50vh;
-  background-position: center bottom;
+  background-position: center;
+  background-size: cover;
+  filter: blur(14px) saturate(1.05);
+  transform: scale(1.06);
+  opacity: 0.95;
 }
 
 .stage {
